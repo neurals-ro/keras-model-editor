@@ -1,0 +1,622 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset=utf-8>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="description" content="neural netwoks in js" />
+    <meta name="keywords" content="neural networks" />
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+
+    <script type="text/javascript" src="node_modules/svg.js/dist/svg.js"></script>
+    <script type="text/javascript" src="lib/svg.textflow.js"></script>
+    <script type="text/javascript" src="node_modules/dat.gui/build/dat.gui.js"></script>
+    <script type="text/javascript" src="lib/svg.panzoom.min.js"></script>
+    <script type="text/javascript" src="lib/svg.draggable.min.js"></script>
+
+    <script type="text/javascript" src="meteor-dagre/dagre/dist/dagre.js"></script>
+
+
+    <script type="text/javascript" src="lib/keras_conf.js"></script>
+    <script type="text/javascript" src="lib/keras_ex4.js"></script>
+    <script type="text/javascript" src="lib/keras_def.js"></script>
+
+    <title>neurals</title>
+    <style>
+html,body, #drawing {
+  width: 100%;
+  height: 100%;
+  margin: 0px;
+  padding: 0px;
+}
+
+#svg_source_editor {
+  display: none;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  background-color: black;
+  opacity: 0.6;
+  z-index: 5;
+}
+
+#svg_source_editor #svg_source_container {
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  right: 30px;
+  bottom: 30px;
+  background-color: #B0B0B0;
+  opacity: 1.0;
+  text-align: center;
+  border: 1px outset #777;
+  z-index: 6;
+}
+
+.toolbar_button button {
+  border:1px solid #dedede;
+  line-height:130%;
+  float: left;
+  background: #E8E8E8 none;
+  padding:5px 10px 5px 7px; /* Firefox */
+  line-height:17px; /* Safari */
+  margin: 5px 20px 0 0;
+  border: 1px #808080 solid;
+  border-top-color: #FFF;
+  border-left-color: #FFF;
+  border-radius: 5px;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+}
+
+.toolbar_button button:hover {
+  border: 1px #e0a874 solid;
+  border-top-color: #fcd9ba;
+  border-left-color: #fcd9ba;
+  background-color: #FFC;
+}
+.toolbar_button button:active {
+  background-color: #F4E284;
+  border-left: 1px solid #663300;
+  border-top: 1px solid #663300;
+}
+
+.toolbar_button button .svg_icon {
+  margin: 0 3px -3px 0 !important;
+  padding: 0;
+  border: none;
+  width: 16px;
+  height: 16px;
+}
+
+#svg_source_editor form {
+  position: absolute;
+  top: 40px;
+  bottom: 30px;
+  width: 100%;
+}
+
+#svg_source_editor #svg_source_textarea {
+  position: relative;
+  width: 95%;
+  height: 95%;
+  padding: 5px;
+  font-size: 12px;
+}
+
+    </style>
+  </head>
+
+  <body>
+    <div id="drawing">
+
+    </div>
+
+<script>
+
+var draw = SVG('drawing').size('100%', '100%').attr({id:"svg1"})
+var view, source1, layer_ndx =0
+var pos = {x: 200, y:100}, padding= 50, dims={w:300, h:100}, layer, layer_editing = false, model={}, mlayer, help, Menu9, gui, help_pos = {x: 730, y:30}, layer_dict = [],drag_pos= {}
+
+
+  model.layer=[], helping=false
+  source1 = keras_ex1
+
+draw_stage()
+var dgraf = {
+  svgd: view,
+  nodes: {  },
+  edges: []
+
+}
+
+var flatten_input = function(layer, arr1){
+  var input_arr = [];
+  console.log(arr1)
+  if (!arr1 || arr1 == [] || typeof arr1 != "Array") {
+    if (layer_ndx == 0) return [];
+    return [source_layers[layer_ndx-1].config.name, layer];
+  }
+
+  for (i in arr1){
+    var rec = flatten_input(layer, arr1[i])
+    if (rec == []) input_arr.push(rec)
+
+  }
+
+
+
+  return input_arr;
+}
+
+function flattenArrayOfArrays(a, r){
+    if(!r){ r = []}
+    for(var i=0; i<a.length; i++){
+        if(a[i].constructor == Array){
+            flattenArrayOfArrays(a[i], r);
+        }else{
+            r.push(a[i]);
+        }
+    }
+    return r;
+}
+
+
+
+draw_diag()
+
+
+
+
+var hide_dialog = function(){$("#svg_source_editor").hide(); }
+
+var save_src =function(){
+  $("#svg_source_editor").hide();
+  var source = JSON.parse($("#svg_source_textarea").val())
+  if (layer_editing){
+    source1.config.layers[layer_ndx]=source;
+
+    layer_editing = false
+  } else {
+    source1 = source
+  }
+
+  $("#svg_source_textarea").blur()
+  //console.log(source)
+
+  draw_diag()
+  showGraph(dgraf)
+  }
+
+var toggle_help = function(layeri){
+
+  if (helping) {help.remove(); helping = false; return;}
+  helping = true
+  help = staticv.group()
+  dims = {w: 800, h: 800}
+  help.rect(dims.w,dims.h).move(help_pos.x,help_pos.y).attr({rx:20, ry:20, "fill-opacity":.7, fill:"#fff", "stroke-width":1})
+
+  var key = source_layers[layer_ndx].class_name
+
+
+  flow = help.textflow(key+": "+keras_args[key].help, dims.w - 50,dims.h - 50)
+      .font({ family: 'sans-serif',  size: 16, anchor: 'start' })
+      .move(help_pos.x+25, help_pos.y +25)
+      .fill('#000')
+  var inc=0, text=""
+  for (i in keras_args[key].args){
+    inc++
+    //help.text(i+": "+keras_help[i]).move(50,60+25*inc).font({ family:   'Helvetica', size: 15, anchor:'start'})
+    text = text + "\n "+i+": "+keras_help[i];
+  }
+
+  flow = help.textflow(text, dims.w - 50,dims.h - 50)
+      .font({ family: 'sans-serif',  size: 16, anchor: 'start' })
+      .move(help_pos.x+25, help_pos.y + 125)
+      .fill('#000')
+
+  help.draggable().on('dragstart', function(e){
+    drag_pos = {x: e.detail.p.x, y:e.detail.p.y}
+  })
+
+  help.draggable().on('dragend', function(e){
+    help_pos = {x: help_pos.x + (e.detail.p.x-drag_pos.x), y: help_pos.y + (e.detail.p.y-drag_pos.y)}
+  })
+
+
+}
+
+var update_layer = function(layer_index){
+  model.layer[layer_ndx].attr({ "stroke-width":1})
+  model.layer[layer_index].attr({ "stroke-width":2})
+  layer_ndx = layer_index
+  if (gui) gui.destroy()
+  var classs = source_layers[layer_ndx].class_name
+
+  console.log(classs)
+
+  Menu9 = function() {
+    this.name = source_layers[layer_ndx].config.name
+    this.Layer = classs //source_layers[layer_ndx].class_name
+    this.trainable = source_layers[layer_ndx].config.trainable ? source_layers[layer_ndx].config.trainable : source_layers[layer_ndx].trainable
+
+
+    for (i in keras_args[classs].args){
+      //gui.add(text, i, keras_args[keras_conf.class_name][i]);
+      this[i] = (source_layers[layer_ndx].config[i] || source_layers[layer_ndx].config[i] === null) ? source_layers[layer_ndx].config[i] : keras_args[classs].args[i]
+      if ( typeof this[i] === 'object') this[i] = JSON.stringify(this[i])
+
+    }
+
+    this["Edit Source"] = function(){
+      show_source(source_layers[layer_ndx]);
+      layer_editing=true;
+    }
+
+    this["Toggle Help"] = function(){
+      toggle_help(layer_ndx)
+    }
+
+    // Define render logic ...
+  };
+
+  var text = new Menu9();
+  gui = new dat.GUI();
+  gui.add(text, "name");
+  var layerall_ctrl = gui.add(text, 'Layer', keras_conf.class_name );
+
+  if (text.trainable) gui.add(text, "trainable");
+  var control
+
+  for (i in keras_args[classs].args){
+    if (keras_choices[i]) {
+      control = gui.add(text, i, keras_choices[i]);
+    } else {
+      control = gui.add(text, i)
+    }
+    control.onFinishChange(function(value) {
+      // Fires when a controller loses focus.
+      source_layers[layer_ndx].config[i] = value
+    });
+  }
+
+  gui.add(text, "Edit Source");
+  gui.add(text, "Toggle Help");
+
+
+
+}
+
+/*
+
+Menu9 = function() {
+  console.log(source_layers[layer_ndx].class_name)
+  var classs = this.Layer = source_layers[layer_ndx].class_name
+
+
+  for (i in keras_args[classs].args){
+    this[i] = keras_args[classs].args[i]
+  }
+
+  this["Toggle Help"] = function(){
+    toggle_help(layer_ndx)
+  }
+
+  // Define render logic ...
+};
+*/
+window.onload = function() {
+  /*
+  var text = new Menu9();
+  gui = new dat.GUI();
+  var layerall_ctrl = gui.add(text, 'Layer', keras_conf.class_name );
+
+  for (i in keras_args[source_layers[layer_ndx].class_name].args){
+    gui.add(text, i, keras_args[source_layers[layer_ndx].class_name].args[i]);
+  }
+
+
+  gui.add(text, "Toggle Help");
+
+
+
+  svgPanZoom('#svg1', {
+          viewportSelector: '.svg-pan-zoom_viewport',
+          zoomEnabled: true,
+          controlIconsEnabled: true,
+          fit: true,
+          center: true,
+           eventsListenerElement: document.querySelector('#svg-1 .svg-pan-zoom_viewport')
+          // viewportSelector: document.getElementById('demo-tiger').querySelector('#g4') // this option will make library to misbehave. Viewport should have no transform attribute
+        });
+
+
+  layer_ctrl.onFinishChange(function(value) {
+    // Fires when a controller loses focus.
+    alert("The new value is " + value);
+  });
+
+  */
+
+update_layer(layer_ndx)
+
+};
+
+function show_source(source){
+  $("#svg_source_editor").show()
+  $("#svg_source_textarea").val(JSON.stringify(source, null, ' '))
+}
+
+function draw_btn(substrate, path_str){
+  var btn = substrate.group();
+  btn.circle(42).attr({"fill-opacity":0.1, "stroke-width":2}).move(8,8)
+  btn.path(path_str)
+  return btn
+}
+
+function draw_stage(){
+  view = draw.group().attr({id:"diagram", class:"svg-pan-zoom_viewport",transform: "matrix(1,0,0,1,0,0)"})
+  view.panZoom();
+  staticv = draw.group()
+  var source_btn = draw_btn(staticv, "m20.55053,17.80402l-11.206,11.20988l11.2073,11.20859l4.07609,-4.07609l-7.1325,-7.1325l7.13121,-7.13121l-4.07609,-4.07867m16.4014,0l-4.0735,4.07738l7.13121,7.13121l-7.13121,7.13121l4.0735,4.07609l11.20859,-11.20859l-11.20859,-11.2073")
+  source_btn.click(function(){
+    show_source(source1)
+  })
+}
+
+function draw_diag(){
+  view.clear();
+  dgraf = {
+    svgd: view,
+    nodes: {  },
+    edges: []
+
+  }
+
+
+  source_layers = source1.config.layers? source1.config.layers : source1.config
+
+  var ls= source_layers,name
+
+
+  for (i in ls){
+    layer = ls[i]
+    layer_ndx = i
+    //mlayer = model.layer[i] = view.group()
+    name = layer.config.name ? layer.config.name : layer.name
+    //mlayer.rect(dims.w,dims.h).cx(pos.x).cy(i*(50+dims.h)+pos.y).attr({rx:5, ry:5, "fill-opacity":0.1})
+    //mlayer.text(layer.config.name).cx(pos.x).cy(i*(50+dims.h)+pos.y-20)
+    //mlayer.text(layer.class_name).cx(pos.x).cy(i*(50+dims.h)+pos.y-0)
+    dgraf.nodes[name]={
+      label: layer.config.name+"\n"+layer.class_name,
+      width: dims.w,
+      height: dims.h
+    }
+
+    if (layer.inbound_nodes && layer_ndx != 0) {
+      var conns = flattenArrayOfArrays(layer.inbound_nodes)
+      console.log(conns)
+      for (j in conns){
+        if (conns[j] !== 0) dgraf.edges.push([conns[j], name])
+      }
+
+    } else {
+      if (layer_ndx != 0) {
+        dgraf.edges.push([source_layers[layer_ndx - 1].config.name, name])
+      }
+    }
+
+
+
+
+    /*
+    mlayer.attr({"data-index": i})
+    if (layer_ndx == i) {
+      mlayer.attr({ "stroke-width":2})
+    } else {
+     mlayer.attr({ "stroke-width":0.5}) //color: '#ff0' })
+    }
+
+
+
+    mlayer.click(function() {
+      update_layer(this.attr("data-index"))
+    })
+
+    if (i>0) view.path("M"+pos.x+","+(i*(50+dims.h)+pos.y-padding-dims.h/2+0.5)+" l"+0+","+(padding-2)+" m -8,-12 l8,12 l8,-12 z").attr({"stroke-width":2,stroke:"#000", "stroke-linecap":"round", "stroke-linejoin":"round"})
+*/
+  }
+  layer_ndx = 0
+
+
+}
+
+</script>
+
+
+<script type="text/javascript">
+
+//marker = add_marker(this.svgd)
+
+/*
+{
+  "kspacey": {"label":"Kevin Spacey","width":144,"height":100},
+  "swilliams": {"label":"Saul Williams","width":160,"height":100},
+  "bpitt": {"label":"Brad Pitt","width":108,"height":100},
+  "hford": {"label":"Harrison Ford","width":168,"height":100},
+  "lwilson": {"label":"Luke Wilson","width":144,"height":100},
+  "kbacon": {"label":"Kevin Bacon","width":121,"height":100}
+}
+
+  [
+  ["kspacey","swilliams"],
+  ["swilliams","kbacon"],
+  ["bpitt","kbacon"],
+  ["hford","lwilson"],
+  ["hford","hford"],
+  ["lwilson","kbacon"],
+  [ "kbacon","lwilson"]
+]
+
+
+
+  {
+  "rankdir": "LR",
+  "nodesep": 100,
+  "edgesep": 10,
+  "ranksep": 100,
+  "marginx": 0,
+  "marginy": 0
+}
+
+
+*/
+
+
+showGraph(dgraf)
+
+
+function showGraph(t) {
+  console.log(t)
+  t.g = new dagre.graphlib.Graph();
+  t.g.setGraph({});
+  t.g.setDefaultEdgeLabel(function() { return {}; });
+  var g = t.g
+
+  t.svgd.clear()
+  t.marker = add_marker(t.svgd)
+
+  var nodes = t.nodes
+
+  var edges = t.edges
+
+  var options = {
+  "rankdir": "UD", // "LR"  "UD"
+  "nodesep": 50,
+  "edgesep": 10,
+  "ranksep": 50,
+  "marginx": 0,
+  "marginy": 0
+}
+
+  g.setGraph(options)
+
+  for(row in nodes) {
+    g.setNode(row, nodes[row])
+  }
+  for(row of edges) {
+    g.setEdge(row[0], row[1])
+  }
+
+  dagre.layout(g)
+
+  var det = g.graph()
+
+  t.svgd.size(det.width, det.height)
+
+/*
+  g.nodes().forEach(function(v) {
+   //console.log("Node " + v + ": " + JSON.stringify(g.node(v)));
+   draw_node(t.svgd, g.node(v))
+  })
+*/
+  var j=0
+  for (i in t.nodes) {
+    model.layer[j] = draw_node(t.svgd, t.nodes[i]).attr({"data-index": j})
+    j++
+  }
+
+
+
+  g.edges().forEach(function(e) {
+      //console.log("Edge " + e.v + " -> " + e.w + ": " + JSON.stringify(g.edge(e)));
+      draw_edge(t.svgd, g.edge(e).points, t.marker)
+  })
+}
+
+function add_marker(svgd) {
+  var marker = svgd.marker(10, 10, function(add) {
+    add.path("M 0 0 L 10 5 L 0 10 L 4 5 z")
+  })
+
+  return marker
+}
+
+
+function draw_node(svgd, node) {
+  console.log(node)
+  var group = svgd.group()
+  var rect1 = group.rect(node.width, node.height).radius(5).cx(node.x).cy(node.y).fill("#ccc")
+
+  var txt = group.text(node.label).x(node.x).y(node.y-20).font({anchor: 'middle'})
+  group.click(function() {
+      update_layer(this.attr("data-index"))
+    })
+
+  return group
+
+
+/*
+    function(add) {
+    add.tspan(node.label)
+    add.tspan(node.width + ' x ' + node.height).newLine()
+  })
+
+  txt.x(node.x).y(node.y-20).font({anchor: 'middle'})
+} */
+}
+
+function draw_edge(svgd, points, marker){
+  var i, str="M " + points[0].x + ' ' + points[0].y + 'C '
+  var len = points.length
+  if(len == 2)
+    str += points[0].x + ' ' + points[0].y + ' ' + points[1].x + ' ' + points[1].y + ' '
+  else if(len == 3)
+    str += points[1].x + ' ' + points[1].y + ' ' + points[1].x + ' ' + points[1].y + ' '
+  else if(len == 4)
+    str += points[1].x + ' ' + points[1].y + ' ' + points[2].x + ' ' + points[2].y + ' '
+  else
+    str += points[1].x + ' ' + points[1].y + ' ' + points[len-2].x + ' ' + points[len-2].y + ' '
+
+  str += points[len-1].x + ' ' + points[len-1].y
+
+  /*
+  for(point in points){
+    if(point == 0)
+      i = 'M'
+    else
+      i = 'L'
+    str = str + ' ' + i + " "+points[point].x+" "+points[point].y
+  }*/
+  var edge = svgd.path(str).fill('none').stroke({width: 2})
+  edge.marker('end', marker)
+}
+
+
+</script>
+
+
+<div id="svg_source_editor" style="display: hide;">
+  <div class="overlay"></div>
+  <div id="svg_source_container">
+    <div id="tool_source_back" class="toolbar_button">
+      <button id="tool_source_save" onclick="save_src()"><img class="svg_icon" src="data:image/svg+xml;charset=utf-8;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjQgMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgY2xhc3M9InN2Z19pY29uIj48c3ZnIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+CgkgPGRlZnM+CgkgIDxsaW5lYXJHcmFkaWVudCB5Mj0iMC42NTYyNSIgeDI9IjAuOTQxNDEiIHkxPSIwLjQzMzU5IiB4MT0iMC40Mjk2OSIgaWQ9InN2Z18xMDYiPgoJICAgPHN0b3Agc3RvcC1vcGFjaXR5PSIxIiBzdG9wLWNvbG9yPSIjMzhmZjQ1IiBvZmZzZXQ9IjAiLz4KCSAgIDxzdG9wIHN0b3Atb3BhY2l0eT0iMSIgc3RvcC1jb2xvcj0iIzEyN2MwYyIgb2Zmc2V0PSIxIi8+CgkgIDwvbGluZWFyR3JhZGllbnQ+CgkgPC9kZWZzPgoJICA8cGF0aCB0cmFuc2Zvcm09InJvdGF0ZSg0NSwgMTIsIDEwKSIgc3Ryb2tlPSIjMDA1NTAwIiBmaWxsPSJ1cmwoI3N2Z18xMDYpIiBpZD0ic3ZnXzEwMSIgZD0ibTcuOSwxNS45bDQuOSwtMC4wNWwwLC0xMy43NWwzLjgsMGwwLDE3LjZsLTguNywwbDAsLTMuOHoiLz4KCTwvc3ZnPjwvc3ZnPg==" width="16" height="16">OK</button>
+      <button id="tool_source_cancel" onclick="hide_dialog();"><img class="svg_icon" src="data:image/svg+xml;charset=utf-8;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjQgMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgY2xhc3M9InN2Z19pY29uIj48c3ZnIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+CiA8ZGVmcz4KICA8bGluZWFyR3JhZGllbnQgeTI9IjAuNjU2MjUiIHgyPSIwLjk0MTQxIiB5MT0iMC40MzM1OSIgeDE9IjAuNDI5NjkiIGlkPSJzdmdfOSI+CiAgIDxzdG9wIHN0b3Atb3BhY2l0eT0iMSIgc3RvcC1jb2xvcj0iI2ZmMzgzOCIgb2Zmc2V0PSIwIi8+CiAgIDxzdG9wIHN0b3Atb3BhY2l0eT0iMSIgc3RvcC1jb2xvcj0iIzdhMGMwYyIgb2Zmc2V0PSIxIi8+CiAgPC9saW5lYXJHcmFkaWVudD4KIDwvZGVmcz4KICA8cGF0aCBzdHJva2U9IiM1NTAwMDAiIGZpbGw9InVybCgjc3ZnXzkpIiBpZD0ic3ZnXzEwMSIgZD0ibTIuMTA1MjYsMTAuNTI2MzJsNy4zNjg0MiwwbDAsLTcuMzY4NDJsMy42ODQyMSwwbDAsNy4zNjg0Mmw3LjM2ODQyLDBsMCwzLjY4NDIxbC03LjM2ODQyLDBsMCw3LjM2ODQybC0zLjY4NDIxLDBsMCwtNy4zNjg0MmwtNy4zNjg0MiwwbDAsLTMuNjg0MjF6IiB0cmFuc2Zvcm09InJvdGF0ZSg0NSwgMTEuMywgMTIuMykiLz4KIDwvc3ZnPjwvc3ZnPg==" width="16" height="16">Cancel</button>
+    <button id="polygon_save" style="display: none;"><img class="svg_icon" src="data:image/svg+xml;charset=utf-8;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjQgMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgY2xhc3M9InN2Z19pY29uIj48c3ZnIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+CgkgPGRlZnM+CgkgIDxsaW5lYXJHcmFkaWVudCB5Mj0iMC42NTYyNSIgeDI9IjAuOTQxNDEiIHkxPSIwLjQzMzU5IiB4MT0iMC40Mjk2OSIgaWQ9InN2Z18xMDYiPgoJICAgPHN0b3Agc3RvcC1vcGFjaXR5PSIxIiBzdG9wLWNvbG9yPSIjMzhmZjQ1IiBvZmZzZXQ9IjAiLz4KCSAgIDxzdG9wIHN0b3Atb3BhY2l0eT0iMSIgc3RvcC1jb2xvcj0iIzEyN2MwYyIgb2Zmc2V0PSIxIi8+CgkgIDwvbGluZWFyR3JhZGllbnQ+CgkgPC9kZWZzPgoJICA8cGF0aCB0cmFuc2Zvcm09InJvdGF0ZSg0NSwgMTIsIDEwKSIgc3Ryb2tlPSIjMDA1NTAwIiBmaWxsPSJ1cmwoI3N2Z18xMDYpIiBpZD0ic3ZnXzEwMSIgZD0ibTcuOSwxNS45bDQuOSwtMC4wNWwwLC0xMy43NWwzLjgsMGwwLDE3LjZsLTguNywwbDAsLTMuOHoiLz4KCTwvc3ZnPjwvc3ZnPg==" width="16" height="16">OK</button><button id="polygon_cancel" style="display: none;"><img class="svg_icon" src="data:image/svg+xml;charset=utf-8;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjQgMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgY2xhc3M9InN2Z19pY29uIj48c3ZnIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+CiA8ZGVmcz4KICA8bGluZWFyR3JhZGllbnQgeTI9IjAuNjU2MjUiIHgyPSIwLjk0MTQxIiB5MT0iMC40MzM1OSIgeDE9IjAuNDI5NjkiIGlkPSJzdmdfOSI+CiAgIDxzdG9wIHN0b3Atb3BhY2l0eT0iMSIgc3RvcC1jb2xvcj0iI2ZmMzgzOCIgb2Zmc2V0PSIwIi8+CiAgIDxzdG9wIHN0b3Atb3BhY2l0eT0iMSIgc3RvcC1jb2xvcj0iIzdhMGMwYyIgb2Zmc2V0PSIxIi8+CiAgPC9saW5lYXJHcmFkaWVudD4KIDwvZGVmcz4KICA8cGF0aCBzdHJva2U9IiM1NTAwMDAiIGZpbGw9InVybCgjc3ZnXzkpIiBpZD0ic3ZnXzEwMSIgZD0ibTIuMTA1MjYsMTAuNTI2MzJsNy4zNjg0MiwwbDAsLTcuMzY4NDJsMy42ODQyMSwwbDAsNy4zNjg0Mmw3LjM2ODQyLDBsMCwzLjY4NDIxbC03LjM2ODQyLDBsMCw3LjM2ODQybC0zLjY4NDIxLDBsMCwtNy4zNjg0MmwtNy4zNjg0MiwwbDAsLTMuNjg0MjF6IiB0cmFuc2Zvcm09InJvdGF0ZSg0NSwgMTEuMywgMTIuMykiLz4KIDwvc3ZnPjwvc3ZnPg==" width="16" height="16">Cancel</button></div>
+    <div id="save_output_btns" style="display: none;">
+      <p id="copy_save_note">Copy the contents of this box into a text editor, then save the file with a .svg extension.</p>
+      <button id="copy_save_done">Done</button>
+    </div>
+    <form>
+      <textarea id="svg_source_textarea" spellcheck="false"></textarea>
+    </form>
+  </div>
+</div>
+
+  </body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "svg.js",
+  "homepage": "http://svgjs.com/",
+  "authors": [
+    "Wout Fierens <wout@woutfierens.com>"
+  ],
+  "description": "A lightweight library for manipulating and animating SVG",
+  "main": "dist/svg.js",
+  "keywords": [
+    "svg", "vector", "graphics"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "spec/",
+    "src/",
+    "gulpfile.js"
+  ]
+}
