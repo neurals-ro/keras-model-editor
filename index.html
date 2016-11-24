@@ -30,7 +30,7 @@ html,body, #drawing {
   padding: 0px;
 }
 
-#svg_source_editor {
+#json_source_editor {
   display: none;
 }
 
@@ -45,7 +45,7 @@ html,body, #drawing {
   z-index: 5;
 }
 
-#svg_source_editor #svg_source_container {
+#json_source_editor #json_source_container {
   position: absolute;
   top: 30px;
   left: 30px;
@@ -94,14 +94,14 @@ html,body, #drawing {
   height: 16px;
 }
 
-#svg_source_editor form {
+#json_source_editor form {
   position: absolute;
   top: 40px;
   bottom: 30px;
   width: 100%;
 }
 
-#svg_source_editor #svg_source_textarea {
+#json_source_editor #json_source_textarea {
   position: relative;
   width: 95%;
   height: 95%;
@@ -121,23 +121,18 @@ html,body, #drawing {
 
 var draw = SVG('drawing').size('100%', '100%').attr({id:"svg1"})
 var view, source1, layer_ndx =0
-var pos = {x: 200, y:100}, padding= 50, dims={w:300, h:100}, layer, layer_editing = false, model={}, mlayer, help, Menu9, gui, help_pos = {x: 730, y:30}, layer_dict = [],drag_pos= {}
+var pos = {x: 200, y:100}, dgraf={},padding= 50, dims={w:300, h:100}, layer, layer_editing = false, model={}, mlayer, help, Menu9, gui, help_pos = {x: 730, y:30}, layer_dict = [],drag_pos= {}
 
 
   model.layer=[], helping=false
   source1 = keras_ex1
 
 draw_stage()
-var dgraf = {
-  svgd: view,
-  nodes: {  },
-  edges: []
 
-}
 
 var flatten_input = function(layer, arr1){
   var input_arr = [];
-  console.log(arr1)
+  //console.log(arr1)
   if (!arr1 || arr1 == [] || typeof arr1 != "Array") {
     if (layer_ndx == 0) return [];
     return [source_layers[layer_ndx-1].config.name, layer];
@@ -173,11 +168,11 @@ draw_diag()
 
 
 
-var hide_dialog = function(){$("#svg_source_editor").hide(); }
+var hide_dialog = function(){$("#json_source_editor").hide(); }
 
 var save_src =function(){
-  $("#svg_source_editor").hide();
-  var source = JSON.parse($("#svg_source_textarea").val())
+  $("#json_source_editor").hide();
+  var source = JSON.parse($("#json_source_textarea").val())
   if (layer_editing){
     source1.config.layers[layer_ndx]=source;
 
@@ -186,7 +181,7 @@ var save_src =function(){
     source1 = source
   }
 
-  $("#svg_source_textarea").blur()
+  $("#json_source_textarea").blur()
   //console.log(source)
 
   draw_diag()
@@ -232,13 +227,14 @@ var toggle_help = function(layeri){
 }
 
 var update_layer = function(layer_index){
-  model.layer[layer_ndx].attr({ "stroke-width":1})
+  model.layer[layer_ndx].attr({ "stroke-width":0.5})
   model.layer[layer_index].attr({ "stroke-width":2})
   layer_ndx = layer_index
   if (gui) gui.destroy()
   var classs = source_layers[layer_ndx].class_name
 
-  console.log(classs)
+  //console.log(classs)
+
 
   Menu9 = function() {
     this.name = source_layers[layer_ndx].config.name
@@ -292,64 +288,16 @@ var update_layer = function(layer_index){
 
 }
 
-/*
 
-Menu9 = function() {
-  console.log(source_layers[layer_ndx].class_name)
-  var classs = this.Layer = source_layers[layer_ndx].class_name
-
-
-  for (i in keras_args[classs].args){
-    this[i] = keras_args[classs].args[i]
-  }
-
-  this["Toggle Help"] = function(){
-    toggle_help(layer_ndx)
-  }
-
-  // Define render logic ...
-};
-*/
 window.onload = function() {
-  /*
-  var text = new Menu9();
-  gui = new dat.GUI();
-  var layerall_ctrl = gui.add(text, 'Layer', keras_conf.class_name );
-
-  for (i in keras_args[source_layers[layer_ndx].class_name].args){
-    gui.add(text, i, keras_args[source_layers[layer_ndx].class_name].args[i]);
-  }
-
-
-  gui.add(text, "Toggle Help");
-
-
-
-  svgPanZoom('#svg1', {
-          viewportSelector: '.svg-pan-zoom_viewport',
-          zoomEnabled: true,
-          controlIconsEnabled: true,
-          fit: true,
-          center: true,
-           eventsListenerElement: document.querySelector('#svg-1 .svg-pan-zoom_viewport')
-          // viewportSelector: document.getElementById('demo-tiger').querySelector('#g4') // this option will make library to misbehave. Viewport should have no transform attribute
-        });
-
-
-  layer_ctrl.onFinishChange(function(value) {
-    // Fires when a controller loses focus.
-    alert("The new value is " + value);
-  });
-
-  */
 
 update_layer(layer_ndx)
 
 };
 
 function show_source(source){
-  $("#svg_source_editor").show()
-  $("#svg_source_textarea").val(JSON.stringify(source, null, ' '))
+  $("#json_source_editor").show()
+  $("#json_source_textarea").val(JSON.stringify(source, null, ' '))
 }
 
 function draw_btn(substrate, path_str){
@@ -394,13 +342,14 @@ function draw_diag(){
     //mlayer.text(layer.class_name).cx(pos.x).cy(i*(50+dims.h)+pos.y-0)
     dgraf.nodes[name]={
       label: layer.config.name+"\n"+layer.class_name,
+      color: keras_args[layer.class_name].color,
       width: dims.w,
       height: dims.h
     }
 
     if (layer.inbound_nodes && layer_ndx != 0) {
       var conns = flattenArrayOfArrays(layer.inbound_nodes)
-      console.log(conns)
+      //console.log(conns)
       for (j in conns){
         if (conns[j] !== 0) dgraf.edges.push([conns[j], name])
       }
@@ -411,25 +360,6 @@ function draw_diag(){
       }
     }
 
-
-
-
-    /*
-    mlayer.attr({"data-index": i})
-    if (layer_ndx == i) {
-      mlayer.attr({ "stroke-width":2})
-    } else {
-     mlayer.attr({ "stroke-width":0.5}) //color: '#ff0' })
-    }
-
-
-
-    mlayer.click(function() {
-      update_layer(this.attr("data-index"))
-    })
-
-    if (i>0) view.path("M"+pos.x+","+(i*(50+dims.h)+pos.y-padding-dims.h/2+0.5)+" l"+0+","+(padding-2)+" m -8,-12 l8,12 l8,-12 z").attr({"stroke-width":2,stroke:"#000", "stroke-linecap":"round", "stroke-linejoin":"round"})
-*/
   }
   layer_ndx = 0
 
@@ -441,48 +371,12 @@ function draw_diag(){
 
 <script type="text/javascript">
 
-//marker = add_marker(this.svgd)
-
-/*
-{
-  "kspacey": {"label":"Kevin Spacey","width":144,"height":100},
-  "swilliams": {"label":"Saul Williams","width":160,"height":100},
-  "bpitt": {"label":"Brad Pitt","width":108,"height":100},
-  "hford": {"label":"Harrison Ford","width":168,"height":100},
-  "lwilson": {"label":"Luke Wilson","width":144,"height":100},
-  "kbacon": {"label":"Kevin Bacon","width":121,"height":100}
-}
-
-  [
-  ["kspacey","swilliams"],
-  ["swilliams","kbacon"],
-  ["bpitt","kbacon"],
-  ["hford","lwilson"],
-  ["hford","hford"],
-  ["lwilson","kbacon"],
-  [ "kbacon","lwilson"]
-]
-
-
-
-  {
-  "rankdir": "LR",
-  "nodesep": 100,
-  "edgesep": 10,
-  "ranksep": 100,
-  "marginx": 0,
-  "marginy": 0
-}
-
-
-*/
-
 
 showGraph(dgraf)
 
 
 function showGraph(t) {
-  console.log(t)
+  //console.log(t)
   t.g = new dagre.graphlib.Graph();
   t.g.setGraph({});
   t.g.setDefaultEdgeLabel(function() { return {}; });
@@ -527,7 +421,7 @@ function showGraph(t) {
 */
   var j=0
   for (i in t.nodes) {
-    model.layer[j] = draw_node(t.svgd, t.nodes[i]).attr({"data-index": j})
+    model.layer[j] = draw_node(t.svgd, t.nodes[i],j)
     j++
   }
 
@@ -547,15 +441,57 @@ function add_marker(svgd) {
   return marker
 }
 
+function add_layer(ndx){
+  var new_layer = {
+      "class_name": "Dense",
+      "config": {
+          "b_constraint": null,
+          "bias": true,
+          "init": "uniform",
+          "output_dim": null,
+          "input_dim": null,
+          "W_regularizer": null,
+          "activity_regularizer": null,
+          "W_constraint": null,
+          "trainable": true,
+          "name": "dense_"+(ndx+1),
+          "b_regularizer": null,
+          "activation": "tanh"
+      },
+      "name": "dense_"+(ndx+1),
+      "inbound_nodes": [
+          [
+              [
+                  source_layers[ndx].config.name,
+                  0,
+                  0
+              ]
+          ]
+      ]
+  }
+  source_layers.splice(ndx+1, 0, new_layer);
+  layer_ndx = ndx+1;
+  draw_diag()
+  showGraph(dgraf)
 
-function draw_node(svgd, node) {
-  console.log(node)
-  var group = svgd.group()
-  var rect1 = group.rect(node.width, node.height).radius(5).cx(node.x).cy(node.y).fill("#ccc")
+
+}
+
+function draw_node(svgd, node, j) {
+  //console.log(node)
+  var group = svgd.group().attr({"data-index":j,"stroke-width": 0.5})
+  var rect1 = group.rect(node.width, node.height).radius(5).cx(node.x).cy(node.y).fill(node.color).attr("fill-opacity",0.2)
 
   var txt = group.text(node.label).x(node.x).y(node.y-20).font({anchor: 'middle'})
   group.click(function() {
       update_layer(this.attr("data-index"))
+    })
+  var add = group.group()
+  add.circle(25).attr({fill:"#fff","stroke-width": 2})
+  add.path("m5,10.6446 l3.57256,4.51989l3.57256,4.51989l3.57256,-4.51989l3.57256,-4.51989l-4.96673,0l0,-7.32094l-4.35678,0l0,7.32094l-4.96673,0z")
+  add.cx(node.x + node.width/2).cy(node.y+node.height/2).attr("data-index",j)
+  add.click(function() {
+      add_layer(this.attr("data-index"))
     })
 
   return group
@@ -601,21 +537,41 @@ function draw_edge(svgd, points, marker){
 </script>
 
 
-<div id="svg_source_editor" style="display: hide;">
+<div id="json_source_editor" style="display: none;">
   <div class="overlay"></div>
-  <div id="svg_source_container">
+  <div id="json_source_container">
     <div id="tool_source_back" class="toolbar_button">
-      <button id="tool_source_save" onclick="save_src()"><img class="svg_icon" src="data:image/svg+xml;charset=utf-8;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjQgMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgY2xhc3M9InN2Z19pY29uIj48c3ZnIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+CgkgPGRlZnM+CgkgIDxsaW5lYXJHcmFkaWVudCB5Mj0iMC42NTYyNSIgeDI9IjAuOTQxNDEiIHkxPSIwLjQzMzU5IiB4MT0iMC40Mjk2OSIgaWQ9InN2Z18xMDYiPgoJICAgPHN0b3Agc3RvcC1vcGFjaXR5PSIxIiBzdG9wLWNvbG9yPSIjMzhmZjQ1IiBvZmZzZXQ9IjAiLz4KCSAgIDxzdG9wIHN0b3Atb3BhY2l0eT0iMSIgc3RvcC1jb2xvcj0iIzEyN2MwYyIgb2Zmc2V0PSIxIi8+CgkgIDwvbGluZWFyR3JhZGllbnQ+CgkgPC9kZWZzPgoJICA8cGF0aCB0cmFuc2Zvcm09InJvdGF0ZSg0NSwgMTIsIDEwKSIgc3Ryb2tlPSIjMDA1NTAwIiBmaWxsPSJ1cmwoI3N2Z18xMDYpIiBpZD0ic3ZnXzEwMSIgZD0ibTcuOSwxNS45bDQuOSwtMC4wNWwwLC0xMy43NWwzLjgsMGwwLDE3LjZsLTguNywwbDAsLTMuOHoiLz4KCTwvc3ZnPjwvc3ZnPg==" width="16" height="16">OK</button>
-      <button id="tool_source_cancel" onclick="hide_dialog();"><img class="svg_icon" src="data:image/svg+xml;charset=utf-8;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjQgMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgY2xhc3M9InN2Z19pY29uIj48c3ZnIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+CiA8ZGVmcz4KICA8bGluZWFyR3JhZGllbnQgeTI9IjAuNjU2MjUiIHgyPSIwLjk0MTQxIiB5MT0iMC40MzM1OSIgeDE9IjAuNDI5NjkiIGlkPSJzdmdfOSI+CiAgIDxzdG9wIHN0b3Atb3BhY2l0eT0iMSIgc3RvcC1jb2xvcj0iI2ZmMzgzOCIgb2Zmc2V0PSIwIi8+CiAgIDxzdG9wIHN0b3Atb3BhY2l0eT0iMSIgc3RvcC1jb2xvcj0iIzdhMGMwYyIgb2Zmc2V0PSIxIi8+CiAgPC9saW5lYXJHcmFkaWVudD4KIDwvZGVmcz4KICA8cGF0aCBzdHJva2U9IiM1NTAwMDAiIGZpbGw9InVybCgjc3ZnXzkpIiBpZD0ic3ZnXzEwMSIgZD0ibTIuMTA1MjYsMTAuNTI2MzJsNy4zNjg0MiwwbDAsLTcuMzY4NDJsMy42ODQyMSwwbDAsNy4zNjg0Mmw3LjM2ODQyLDBsMCwzLjY4NDIxbC03LjM2ODQyLDBsMCw3LjM2ODQybC0zLjY4NDIxLDBsMCwtNy4zNjg0MmwtNy4zNjg0MiwwbDAsLTMuNjg0MjF6IiB0cmFuc2Zvcm09InJvdGF0ZSg0NSwgMTEuMywgMTIuMykiLz4KIDwvc3ZnPjwvc3ZnPg==" width="16" height="16">Cancel</button>
-    <button id="polygon_save" style="display: none;"><img class="svg_icon" src="data:image/svg+xml;charset=utf-8;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjQgMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgY2xhc3M9InN2Z19pY29uIj48c3ZnIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+CgkgPGRlZnM+CgkgIDxsaW5lYXJHcmFkaWVudCB5Mj0iMC42NTYyNSIgeDI9IjAuOTQxNDEiIHkxPSIwLjQzMzU5IiB4MT0iMC40Mjk2OSIgaWQ9InN2Z18xMDYiPgoJICAgPHN0b3Agc3RvcC1vcGFjaXR5PSIxIiBzdG9wLWNvbG9yPSIjMzhmZjQ1IiBvZmZzZXQ9IjAiLz4KCSAgIDxzdG9wIHN0b3Atb3BhY2l0eT0iMSIgc3RvcC1jb2xvcj0iIzEyN2MwYyIgb2Zmc2V0PSIxIi8+CgkgIDwvbGluZWFyR3JhZGllbnQ+CgkgPC9kZWZzPgoJICA8cGF0aCB0cmFuc2Zvcm09InJvdGF0ZSg0NSwgMTIsIDEwKSIgc3Ryb2tlPSIjMDA1NTAwIiBmaWxsPSJ1cmwoI3N2Z18xMDYpIiBpZD0ic3ZnXzEwMSIgZD0ibTcuOSwxNS45bDQuOSwtMC4wNWwwLC0xMy43NWwzLjgsMGwwLDE3LjZsLTguNywwbDAsLTMuOHoiLz4KCTwvc3ZnPjwvc3ZnPg==" width="16" height="16">OK</button><button id="polygon_cancel" style="display: none;"><img class="svg_icon" src="data:image/svg+xml;charset=utf-8;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjQgMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgY2xhc3M9InN2Z19pY29uIj48c3ZnIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+CiA8ZGVmcz4KICA8bGluZWFyR3JhZGllbnQgeTI9IjAuNjU2MjUiIHgyPSIwLjk0MTQxIiB5MT0iMC40MzM1OSIgeDE9IjAuNDI5NjkiIGlkPSJzdmdfOSI+CiAgIDxzdG9wIHN0b3Atb3BhY2l0eT0iMSIgc3RvcC1jb2xvcj0iI2ZmMzgzOCIgb2Zmc2V0PSIwIi8+CiAgIDxzdG9wIHN0b3Atb3BhY2l0eT0iMSIgc3RvcC1jb2xvcj0iIzdhMGMwYyIgb2Zmc2V0PSIxIi8+CiAgPC9saW5lYXJHcmFkaWVudD4KIDwvZGVmcz4KICA8cGF0aCBzdHJva2U9IiM1NTAwMDAiIGZpbGw9InVybCgjc3ZnXzkpIiBpZD0ic3ZnXzEwMSIgZD0ibTIuMTA1MjYsMTAuNTI2MzJsNy4zNjg0MiwwbDAsLTcuMzY4NDJsMy42ODQyMSwwbDAsNy4zNjg0Mmw3LjM2ODQyLDBsMCwzLjY4NDIxbC03LjM2ODQyLDBsMCw3LjM2ODQybC0zLjY4NDIxLDBsMCwtNy4zNjg0MmwtNy4zNjg0MiwwbDAsLTMuNjg0MjF6IiB0cmFuc2Zvcm09InJvdGF0ZSg0NSwgMTEuMywgMTIuMykiLz4KIDwvc3ZnPjwvc3ZnPg==" width="16" height="16">Cancel</button></div>
-    <div id="save_output_btns" style="display: none;">
-      <p id="copy_save_note">Copy the contents of this box into a text editor, then save the file with a .svg extension.</p>
-      <button id="copy_save_done">Done</button>
+      <button id="tool_source_save" onclick="save_src()"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="16" height="16">
+   	  <path transform="rotate(45, 12, 10)" fill="#005500" id="svg_102" d="m7.9,15.9l4.9,-0.05l0,-13.75l3.8,0l0,17.6l-8.7,0l0,-3.8z"/>
+   	</svg>
+     </svg>OK</button>
+      <button id="tool_source_cancel" onclick="hide_dialog();"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16">
+          <path fill="#550000" id="svg_101" d="m2.10526,10.52632l7.36842,0l0,-7.36842l3.68421,0l0,7.36842l7.36842,0l0,3.68421l-7.36842,0l0,7.36842l-3.68421,0l0,-7.36842l-7.36842,0l0,-3.68421z" transform="rotate(45, 11.3, 12.3)"/>
+         </svg>Cancel</button>
     </div>
+
     <form>
-      <textarea id="svg_source_textarea" spellcheck="false"></textarea>
+      <textarea id="json_source_textarea" spellcheck="false"></textarea>
     </form>
   </div>
+</div>
+
+<div id="dialog_box" style="display: none;">
+	<div class="overlay"></div>
+	<div id="dialog_container" style="left: 1262.5px; top: 363.5px;">
+		<div id="dialog_content"></div>
+		<div id="dialog_buttons"><input type="button" value="OK"><input type="button" value="Cancel"></div>
+	</div>
+</div>
+
+<div id="dialog_elements" style="display: none;">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16">
+    <path fill="#550000" id="svg_101" d="m2.10526,10.52632l7.36842,0l0,-7.36842l3.68421,0l0,7.36842l7.36842,0l0,3.68421l-7.36842,0l0,7.36842l-3.68421,0l0,-7.36842l-7.36842,0l0,-3.68421z" transform="rotate(45, 11.3, 12.3)"/>
+   </svg>
+
+   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16">
+	  <path transform="rotate(45, 12, 10)" fill="#005500" id="svg_102" d="m7.9,15.9l4.9,-0.05l0,-13.75l3.8,0l0,17.6l-8.7,0l0,-3.8z"/>
+	</svg>
 </div>
 
   </body>
