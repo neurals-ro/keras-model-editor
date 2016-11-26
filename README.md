@@ -10,7 +10,8 @@ Copy your own models.json by pressing the upper-left button. Or just play with t
 - Color coded: generally the red layers loose some data, green: bring add'l data, etc.
 - User can edit the JSON for each layer by "Edit Source" in the menu
 - Edit and copy for Keras of the model's JSON with the source button (upper-left corner)
-- Add additional layers at the output of any layer (the arrow down icon in the right of each layer)
+- Add additional layers at the output of any layer (the arrow icon in the corner of each layer)
+- Diagram direction change: from left-to-right to up-to-down
 
 
 ## Known Bugs

@@ -120,12 +120,20 @@ html,body, #drawing {
 <script>
 
 var draw = SVG('drawing').size('100%', '100%').attr({id:"svg1"})
-var view, source1, layer_ndx =0
+var view, source1, layer_ndx =0, diag_options = {
+    "rankdir": "LR", // "LR"  "UD"
+    "nodesep": 50,
+    "edgesep": 10,
+    "ranksep": 50,
+    "marginx": 0,
+    "marginy": 0
+  }
 var pos = {x: 200, y:100}, dgraf={},padding= 50, dims={w:300, h:100}, layer, layer_editing = false, model={}, mlayer, help, Menu9, gui, help_pos = {x: 730, y:30}, layer_dict = [],drag_pos= {}
 
 
-  model.layer=[], helping=false
-  source1 = keras_ex1
+
+model.layer=[], helping=false
+source1 = keras_ex1
 
 draw_stage()
 
@@ -315,6 +323,17 @@ function draw_stage(){
   source_btn.click(function(){
     show_source(source1)
   })
+
+  var dir_btn = draw_btn(staticv, "m14.11023,34.4384l4.17224,5.27878l4.17224,5.27878l4.17243,-5.27863l4.17243,-5.27863l-5.80056,-0.0001l0.00015,-8.55001l-5.08821,-0.00009l-0.00015,8.55001l-5.80056,-0.0001l-0.00001,-0.00001z m20,-5 l5.27878,-4.17224l5.27878,-4.17224l-5.27863,-4.17243l-5.27863,-4.17243l-0.0001,5.80056l-8.55001,-0.00015l-0.00009,5.08821l8.55001,0.00015l-0.0001,5.80056l-0.00001,0.00001z").dmove(60,0)
+  dir_btn.click(function(){
+    if (diag_options.rankdir == "UD") {
+      diag_options.rankdir = "LR"
+    } else {
+      diag_options.rankdir = "UD"
+    }
+    draw_diag()
+    showGraph(dgraf)
+  })
 }
 
 function draw_diag(){
@@ -325,6 +344,9 @@ function draw_diag(){
     edges: []
 
   }
+
+  if (diag_options.rankdir == "LR" && dims.w > dims.h) dims={w: dims.h, h: dims.w}
+  if (diag_options.rankdir == "UD" && dims.w < dims.h) dims={w: dims.h, h: dims.w}
 
 
   source_layers = source1.config.layers? source1.config.layers : source1.config
@@ -389,16 +411,7 @@ function showGraph(t) {
 
   var edges = t.edges
 
-  var options = {
-  "rankdir": "UD", // "LR"  "UD"
-  "nodesep": 50,
-  "edgesep": 10,
-  "ranksep": 50,
-  "marginx": 0,
-  "marginy": 0
-}
-
-  g.setGraph(options)
+  g.setGraph(diag_options)
 
   for(row in nodes) {
     g.setNode(row, nodes[row])
@@ -483,12 +496,16 @@ function draw_node(svgd, node, j) {
   var rect1 = group.rect(node.width, node.height).radius(5).cx(node.x).cy(node.y).fill(node.color).attr("fill-opacity",0.2)
 
   var txt = group.text(node.label).x(node.x).y(node.y-20).font({anchor: 'middle'})
+
+  if (diag_options.rankdir == "LR") txt.rotate(-90)
+
   group.click(function() {
       update_layer(this.attr("data-index"))
     })
   var add = group.group()
   add.circle(25).attr({fill:"#fff","stroke-width": 2})
-  add.path("m5,10.6446 l3.57256,4.51989l3.57256,4.51989l3.57256,-4.51989l3.57256,-4.51989l-4.96673,0l0,-7.32094l-4.35678,0l0,7.32094l-4.96673,0z")
+  var arrow = add.path("m5,10.6446 l3.57256,4.51989l3.57256,4.51989l3.57256,-4.51989l3.57256,-4.51989l-4.96673,0l0,-7.32094l-4.35678,0l0,7.32094l-4.96673,0z")
+  if (diag_options.rankdir == "LR") arrow.rotate(-90)
   add.cx(node.x + node.width/2).cy(node.y+node.height/2).attr("data-index",j)
   add.click(function() {
       add_layer(this.attr("data-index"))
