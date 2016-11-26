@@ -413,11 +413,12 @@ function showGraph(t) {
 
   g.setGraph(diag_options)
 
-  for(row in nodes) {
-    g.setNode(row, nodes[row])
-  }
   for(row of edges) {
     g.setEdge(row[0], row[1])
+  }
+
+  for(row in nodes) {
+    g.setNode(row, nodes[row])
   }
 
   dagre.layout(g)
@@ -432,23 +433,26 @@ function showGraph(t) {
    draw_node(t.svgd, g.node(v))
   })
 */
+
+  g.edges().forEach(function(e) {
+      //console.log("Edge " + e.v + " -> " + e.w + ": " + JSON.stringify(g.edge(e)));
+      draw_edge(t.svgd, g.edge(e).points, t.marker)
+  })
+
+
   var j=0
   for (i in t.nodes) {
     model.layer[j] = draw_node(t.svgd, t.nodes[i],j)
     j++
   }
 
-
-
-  g.edges().forEach(function(e) {
-      //console.log("Edge " + e.v + " -> " + e.w + ": " + JSON.stringify(g.edge(e)));
-      draw_edge(t.svgd, g.edge(e).points, t.marker)
-  })
 }
 
+
+
 function add_marker(svgd) {
-  var marker = svgd.marker(10, 10, function(add) {
-    add.path("M 0 0 L 10 5 L 0 10 L 4 5 z")
+  var marker = svgd.marker(-19, 10, function(add) {
+    add.path("M-19,0l10,5l-10,5l4,-5l-4,-5z").attr({"stroke-linecap":"round", "stroke-linejoin":"round"})
   })
 
   return marker
@@ -467,7 +471,7 @@ function add_layer(ndx){
           "activity_regularizer": null,
           "W_constraint": null,
           "trainable": true,
-          "name": "dense_"+(ndx+1),
+          "name": "dense_"+(source_layers.length),
           "b_regularizer": null,
           "activation": "tanh"
       },
@@ -482,8 +486,8 @@ function add_layer(ndx){
           ]
       ]
   }
-  source_layers.splice(ndx+1, 0, new_layer);
-  layer_ndx = ndx+1;
+  source_layers.push(new_layer);
+  layer_ndx = ndx;
   draw_diag()
   showGraph(dgraf)
 
@@ -546,7 +550,7 @@ function draw_edge(svgd, points, marker){
       i = 'L'
     str = str + ' ' + i + " "+points[point].x+" "+points[point].y
   }*/
-  var edge = svgd.path(str).fill('none').stroke({width: 2})
+  var edge = svgd.path(str).fill('none').stroke({width: 1}).attr({"stroke-linecap":"round", "stroke-linejoin":"round"})
   edge.marker('end', marker)
 }
 
