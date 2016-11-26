@@ -128,7 +128,7 @@ var view, source1, layer_ndx =0, diag_options = {
     "marginx": 0,
     "marginy": 0
   }
-var pos = {x: 200, y:100}, dgraf={},padding= 50, dims={w:300, h:100}, layer, layer_editing = false, model={}, mlayer, help, Menu9, gui, help_pos = {x: 730, y:30}, layer_dict = [],drag_pos= {}
+var pos = {x: 200, y:100}, dgraf={},padding= 50, dims={w:300, h:100}, layer, layer_editing = false, model={}, mlayer, help, Menu9, gui, help_pos = {x: 730, y:30},drag_pos= {}, merge_layers_ndx = []
 
 
 
@@ -273,6 +273,32 @@ var update_layer = function(layer_index){
   gui = new dat.GUI();
   gui.add(text, "name");
   var layerall_ctrl = gui.add(text, 'Layer', keras_conf.class_name );
+  layerall_ctrl.onFinishChange(function(value) {
+      // Fires when a controller loses focus.
+      var old_name = source_layers[layer_ndx].config.name ? source_layers[layer_ndx].config.name : source_layers[layer_ndx].name
+      change_name(layer_ndx, old_name, value+"_"+(source_layers.length))
+      source_layers[layer_ndx] = {
+          "class_name": value,
+          name: value+"_"+(source_layers.length),
+          "trainable": true,
+          "config": keras_args[value].args,
+        //  "name": value+"_"+(source_layers.length),
+          "inbound_nodes": source_layers[layer_ndx].inbound_nodes? source_layers[layer_ndx].inbound_nodes : []
+      }
+      source_layers[layer_ndx].config.name = value+"_"+(source_layers.length)
+
+      //console.log(layer_ndx, source_layers, source_layers[layer_ndx])
+      //return
+
+
+      draw_diag()
+      showGraph(dgraf)
+
+
+
+
+    });
+
 
   if (text.trainable) gui.add(text, "trainable");
   var control
@@ -336,6 +362,21 @@ function draw_stage(){
   })
 }
 
+function change_name(ndx, old_name, name){
+  source_layers.forEach(function(item,i){
+    if (item.inbound_nodes) change_name_array(item.inbound_nodes, old_name, name)
+  })
+}
+
+function change_name_array(arr, old_name, new_name){
+  arr.forEach(function(item, i){
+    if (item == old_name) { arr[i]=new_name;
+    } else {
+      if (typeof item == "object") change_name_array(item, old_name, new_name)
+    }
+  })
+}
+
 function draw_diag(){
   view.clear();
   dgraf = {
@@ -367,6 +408,9 @@ function draw_diag(){
       color: keras_args[layer.class_name].color,
       width: dims.w,
       height: dims.h
+    }
+    if (layer.class_name == "Merge") {
+      merge_layers_ndx.push(i)
     }
 
     if (layer.inbound_nodes && layer_ndx != 0) {
@@ -461,6 +505,7 @@ function add_marker(svgd) {
 function add_layer(ndx){
   var new_layer = {
       "class_name": "Dense",
+      "trainable": true,
       "config": {
           "b_constraint": null,
           "bias": true,
@@ -475,7 +520,7 @@ function add_layer(ndx){
           "b_regularizer": null,
           "activation": "tanh"
       },
-      "name": "dense_"+(ndx+1),
+      "name": "dense_"+(source_layers.length),
       "inbound_nodes": [
           [
               [

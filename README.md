@@ -16,7 +16,6 @@ Copy your own models.json by pressing the upper-left button. Or just play with t
 
 ## Known Bugs
 - Mixes default values with empty variables. But editing the source for each layer can be used as workaround.
-- Cannot change the layer class from the menu yet. (same workaround as above)
 
 ## We would love to know how to improve this
 This is in pre-pre-alpha stage but still usable. Let us know what features you would like to see in version 1.
