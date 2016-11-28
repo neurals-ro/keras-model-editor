@@ -120,15 +120,15 @@ html,body, #drawing {
 <script>
 
 var draw = SVG('drawing').size('100%', '100%').attr({id:"svg1"})
-var view, source1, layer_ndx =0, diag_options = {
+var view, source1, layer_ndx = "model", diag_options = {
     "rankdir": "LR", // "LR"  "UD"
-    "nodesep": 50,
-    "edgesep": 10,
-    "ranksep": 50,
+    "nodesep": 20,
+    "edgesep": 20,
+    "ranksep": 20,
     "marginx": 0,
     "marginy": 0
   }
-var pos = {x: 200, y:100}, dgraf={},padding= 50, dims={w:300, h:100}, layer, layer_editing = false, model={}, mlayer, help, Menu9, gui, help_pos = {x: 730, y:30},drag_pos= {}, merge_layers_ndx = []
+var pos = {x: 200, y:100}, dgraf={}, dims={w:300, h:100}, layer, layer_editing = false, model={}, mlayer, help, Menu9, gui, help_pos = {x: 730, y:30},drag_pos= {}, merge_layers_ndx = []
 
 
 
@@ -167,6 +167,23 @@ function flattenArrayOfArrays(a, r){
         }
     }
     return r;
+}
+
+function add_model(graph){
+
+  graph.nodes[source1.config.name]={
+    label: source1.config.name+"\n"+source1.class_name,
+    color: keras_args["Model"].color,
+    width: dims.w,
+    height: dims.h
+  }
+
+  var links = flattenArrayOfArrays(source1.config.input_layers)
+
+  for (i in links) {
+    if (typeof links[i] == "string") graph.edges.push([source1.config.name, links[i]])
+  }
+
 }
 
 
@@ -237,7 +254,9 @@ var toggle_help = function(layeri){
 var update_layer = function(layer_index){
   model.layer[layer_ndx].attr({ "stroke-width":0.5})
   model.layer[layer_index].attr({ "stroke-width":2})
+
   layer_ndx = layer_index
+
   if (gui) gui.destroy()
   var classs = source_layers[layer_ndx].class_name
 
@@ -272,35 +291,43 @@ var update_layer = function(layer_index){
   var text = new Menu9();
   gui = new dat.GUI();
   gui.add(text, "name");
-  var layerall_ctrl = gui.add(text, 'Layer', keras_conf.class_name );
-  layerall_ctrl.onFinishChange(function(value) {
-      // Fires when a controller loses focus.
-      var old_name = source_layers[layer_ndx].config.name ? source_layers[layer_ndx].config.name : source_layers[layer_ndx].name
-      change_name(layer_ndx, old_name, value+"_"+(source_layers.length))
-      source_layers[layer_ndx] = {
-          "class_name": value,
-          name: value+"_"+(source_layers.length),
-          "trainable": true,
-          "config": keras_args[value].args,
-        //  "name": value+"_"+(source_layers.length),
-          "inbound_nodes": source_layers[layer_ndx].inbound_nodes? source_layers[layer_ndx].inbound_nodes : []
-      }
-      source_layers[layer_ndx].config.name = value+"_"+(source_layers.length)
 
-      //console.log(layer_ndx, source_layers, source_layers[layer_ndx])
-      //return
+  if (layer_ndx != "model") {
+    var layerall_ctrl = gui.add(text, 'Layer', keras_conf.class_name );
+    layerall_ctrl.onFinishChange(function(value) {
+        // Fires when a controller loses focus.
+        var old_name = source_layers[layer_ndx].config.name ? source_layers[layer_ndx].config.name : source_layers[layer_ndx].name
+        change_name(layer_ndx, old_name, value+"_"+(source_layers.length))
+        source_layers[layer_ndx] = {
+            "class_name": value,
+            name: value+"_"+(source_layers.length),
+            "trainable": true,
+            "config": keras_args[value].args,
+          //  "name": value+"_"+(source_layers.length),
+            "inbound_nodes": source_layers[layer_ndx].inbound_nodes? source_layers[layer_ndx].inbound_nodes : []
+        }
+        source_layers[layer_ndx].config.name = value+"_"+(source_layers.length)
 
-
-      draw_diag()
-      showGraph(dgraf)
+        //console.log(layer_ndx, source_layers, source_layers[layer_ndx])
+        //return
 
 
+        draw_diag()
+        showGraph(dgraf)
 
 
-    });
 
 
-  if (text.trainable) gui.add(text, "trainable");
+      });
+
+      if (text.trainable) gui.add(text, "trainable");
+
+
+  }
+
+
+
+
   var control
 
   for (i in keras_args[classs].args){
@@ -324,7 +351,7 @@ var update_layer = function(layer_index){
 
 
 window.onload = function() {
-
+layer_ndx = "model"
 update_layer(layer_ndx)
 
 };
@@ -386,11 +413,16 @@ function draw_diag(){
 
   }
 
+
   if (diag_options.rankdir == "LR" && dims.w > dims.h) dims={w: dims.h, h: dims.w}
   if (diag_options.rankdir == "UD" && dims.w < dims.h) dims={w: dims.h, h: dims.w}
 
+  add_model(dgraf)
+
 
   source_layers = source1.config.layers? source1.config.layers : source1.config
+  source_layers.model = source1
+
 
   var ls= source_layers,name
 
@@ -421,7 +453,7 @@ function draw_diag(){
       }
 
     } else {
-      if (layer_ndx != 0) {
+      if (layer_ndx != 0 && layer_ndx != "model") {
         dgraf.edges.push([source_layers[layer_ndx - 1].config.name, name])
       }
     }
@@ -438,7 +470,11 @@ function draw_diag(){
 <script type="text/javascript">
 
 
+
+
 showGraph(dgraf)
+
+
 
 
 function showGraph(t) {
@@ -465,18 +501,13 @@ function showGraph(t) {
     g.setNode(row, nodes[row])
   }
 
+
+
   dagre.layout(g)
 
   var det = g.graph()
 
   t.svgd.size(det.width, det.height)
-
-/*
-  g.nodes().forEach(function(v) {
-   //console.log("Node " + v + ": " + JSON.stringify(g.node(v)));
-   draw_node(t.svgd, g.node(v))
-  })
-*/
 
   g.edges().forEach(function(e) {
       //console.log("Edge " + e.v + " -> " + e.w + ": " + JSON.stringify(g.edge(e)));
@@ -486,7 +517,12 @@ function showGraph(t) {
 
   var j=0
   for (i in t.nodes) {
-    model.layer[j] = draw_node(t.svgd, t.nodes[i],j)
+    if (j == 0 ) {
+      model.layer.model = draw_node(t.svgd, t.nodes[i],j)
+    } else {
+      model.layer[j-1] = draw_node(t.svgd, t.nodes[i],j)
+    }
+
     j++
   }
 
@@ -541,8 +577,10 @@ function add_layer(ndx){
 
 function draw_node(svgd, node, j) {
   //console.log(node)
+  var r = 5
+  if (j === 0) { j="model" , r = Math.min(node.width, node.height)/2} else { j-- }
   var group = svgd.group().attr({"data-index":j,"stroke-width": 0.5})
-  var rect1 = group.rect(node.width, node.height).radius(5).cx(node.x).cy(node.y).fill(node.color).attr("fill-opacity",0.2)
+  var rect1 = group.rect(node.width, node.height).cx(node.x).cy(node.y).fill(node.color).attr({"fill-opacity": 0.2, rx:r, ry:r})
 
   var txt = group.text(node.label).x(node.x).y(node.y-20).font({anchor: 'middle'})
 
