@@ -7,7 +7,6 @@
     <meta name="keywords" content="neural networks" />
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 
-
     <script type="text/javascript" src="libs/svg.js"></script>
     <script type="text/javascript" src="lib/svg.textflow.js"></script>
     <script type="text/javascript" src="libs/dat.gui.js"></script>
@@ -119,7 +118,7 @@ html,body, #drawing {
 
 <script>
 
-var draw = SVG('drawing').size('100%', '100%').attr({id:"svg1"})
+var draw
 var view, source1, layer_ndx = "model", diag_options = {
     "rankdir": "LR", // "LR"  "UD"
     "nodesep": 20,
@@ -131,12 +130,20 @@ var view, source1, layer_ndx = "model", diag_options = {
 var pos = {x: 200, y:100}, dgraf={}, dims={w:300, h:100}, layer, layer_editing = false, model={}, mlayer, help, Menu9, gui, help_pos = {x: 730, y:30},drag_pos= {}, merge_layers_ndx = []
 
 
-
 model.layer=[], helping=false
 source1 = keras_ex1
 
-draw_stage()
 
+function drawModel(elementId,mjson){
+  console.log(mjson)
+  source1 = mjson
+  elId = elementId
+  draw = SVG(elementId).size('100%', '100%').attr({id:"svg1"});
+
+  draw_stage()
+  draw_diag()
+  showGraph(dgraf)
+}
 
 var flatten_input = function(layer, arr1){
   var input_arr = [];
@@ -185,13 +192,6 @@ function add_model(graph){
   }
 
 }
-
-
-
-draw_diag()
-
-
-
 
 var hide_dialog = function(){$("#json_source_editor").hide(); }
 
@@ -349,13 +349,6 @@ var update_layer = function(layer_index){
 
 }
 
-
-window.onload = function() {
-layer_ndx = "model"
-update_layer(layer_ndx)
-
-};
-
 function show_source(source){
   $("#json_source_editor").show()
   $("#json_source_textarea").val(JSON.stringify(source, null, ' '))
@@ -468,15 +461,19 @@ function draw_diag(){
 
 
 <script type="text/javascript">
-
-
-
-
-showGraph(dgraf)
-
-
-
-
+var json = $.url().param('url')
+if (!json){
+  drawModel("drawing", keras_ex1)
+  layer_ndx = "model"
+  update_layer(layer_ndx)
+}
+else {
+  $.getJSON( json, function( data ) {
+    drawModel("drawing", data)
+    layer_ndx = "model"
+    update_layer(layer_ndx)
+  });
+}
 function showGraph(t) {
   //console.log(t)
   t.g = new dagre.graphlib.Graph();
@@ -527,8 +524,6 @@ function showGraph(t) {
   }
 
 }
-
-
 
 function add_marker(svgd) {
   var marker = svgd.marker(-19, 10, function(add) {
