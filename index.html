@@ -330,7 +330,7 @@ var update_layer = function(layer_index){
 
   var control
 
-  for (i in keras_args[classs].args){
+  for (let i in keras_args[classs].args){
     if (keras_choices[i]) {
       control = gui.add(text, i, keras_choices[i]);
     } else {
