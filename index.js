@@ -25,12 +25,7 @@ var KerasModelEditor;
         console.log('KerasModelEditor: No Model provided.');
     }
 
-    //options.callbacks = {
-    //  node: ['click', this.nodeOnClick],
-    //}
-
     let self = this;
-    console.log('***&&&&&&&&&*999*');
     this.viewer = new KerasModelViewer(json, el, options);
 
     if(this.viewer._options.keras_ver == 1) {
@@ -42,6 +37,7 @@ var KerasModelEditor;
     }
     this.keras_conf = KerasModelConf.keras_conf;
     this.keras_choices = KerasModelConf.keras_choices;
+    this.keras_help = KerasModelConf.keras_help;
 
     let _draw_node = this.viewer.draw_node;
     this.viewer.draw_node = function(svgd, node, j) {
@@ -49,6 +45,9 @@ var KerasModelEditor;
       return self.draw_node(drawn, svgd, node, j);
     }
 
+    this.helping = false;
+    this.help_pos = {x: 730, y:30};
+    this.layer_editing = false;
   }
 
   KerasModelEditor.prototype.hide_dialog = function() {$("#json_source_editor").hide(); }
@@ -81,38 +80,38 @@ var KerasModelEditor;
   }
 
   KerasModelEditor.prototype.toggle_help = function(layeri) {
-    if (helping) {help.remove(); helping = false; return;}
-    helping = true
-    help = staticv.group()
+    let self = this;
+    if (this.helping) {this.help.remove(); this.helping = false; return;}
+    this.helping = true
+    this.help = this.staticv.group()
     dims = {w: 800, h: 800}
-    help.rect(dims.w,dims.h).move(help_pos.x,help_pos.y).attr({rx:20, ry:20, "fill-opacity":.7, fill:"#fff", "stroke-width":1})
+    this.help.rect(dims.w,dims.h).move(this.help_pos.x,this.help_pos.y).attr({rx:20, ry:20, "fill-opacity":.7, fill:"#fff", "stroke-width":1})
 
-    var key = source_layers[layer_ndx].class_name
+    var key = this.viewer.source_layers[this.viewer.layer_ndx].class_name
 
-
-    flow = help.textflow(key+": "+ this.viewer.keras_args[key].help, dims.w - 50,dims.h - 50)
+    console.log('help', this.help);
+    flow = this.help.textflow(key+": "+ this.viewer.keras_args[key].help, dims.w - 50,dims.h - 50)
         .font({ family: 'sans-serif',  size: 16, anchor: 'start' })
-        .move(help_pos.x+25, help_pos.y +25)
+        .move(this.help_pos.x+25, this.help_pos.y +25)
         .fill('#000')
     var inc=0, text=""
     for (i in this.viewer.keras_args[key].args){
       inc++
-      //help.text(i+": "+keras_help[i]).move(50,60+25*inc).font({ family:   'Helvetica', size: 15, anchor:'start'})
-      text = text + "\n "+i+": "+keras_help[i];
+      text = text + "\n "+i+": "+self.keras_help[i];
     }
 
-    flow = help.textflow(text, dims.w - 50,dims.h - 50)
+    flow = this.help.textflow(text, dims.w - 50,dims.h - 50)
         .font({ family: 'sans-serif',  size: 16, anchor: 'start' })
-        .move(help_pos.x+25, help_pos.y + 125)
+        .move(this.help_pos.x+25, this.help_pos.y + 125)
         .fill('#000')
 
-    help.draggable().on('dragstart', function(e){
+    /*this.help.draggable().on('dragstart', function(e){
       drag_pos = {x: e.detail.p.x, y:e.detail.p.y}
     })
 
-    help.draggable().on('dragend', function(e){
-      help_pos = {x: help_pos.x + (e.detail.p.x-drag_pos.x), y: help_pos.y + (e.detail.p.y-drag_pos.y)}
-    })
+    this.help.draggable().on('dragend', function(e){
+      self.help_pos = {x: self.help_pos.x + (e.detail.p.x-drag_pos.x), y: self.help_pos.y + (e.detail.p.y-drag_pos.y)}
+    })*/
   }
 
   KerasModelEditor.prototype.update_layer = function(layer_index) {
@@ -334,11 +333,6 @@ var KerasModelEditor;
     return group
   }
 
-  KerasModelEditor.prototype.nodeOnClick = function(a,b) {
-    console.log('click', a, b)
-    //self.update_layer(this.attr("data-index"))
-  }
-
   KerasModelEditor.prototype.draw_man = function() {
     let self = this;
     this._man = this.viewer._el.parentElement;
@@ -415,15 +409,15 @@ var KerasModelEditor;
     this.viewer.show();
     this.draw_man();
     this.viewer.layer_ndx = 'model'
-    staticv = draw.group()
-   var source_btn = draw_btn(staticv, "m20.55053,17.80402l-11.206,11.20988l11.2073,11.20859l4.07609,-4.07609l-7.1325,-7.1325l7.13121,-7.13121l-4.07609,-4.07867m16.4014,0l-4.0735,4.07738l7.13121,7.13121l-7.13121,7.13121l4.0735,4.07609l11.20859,-11.20859l-11.20859,-11.2073")
+    this.staticv = this.viewer.draw.group()
+   var source_btn = draw_btn(this.staticv, "m20.55053,17.80402l-11.206,11.20988l11.2073,11.20859l4.07609,-4.07609l-7.1325,-7.1325l7.13121,-7.13121l-4.07609,-4.07867m16.4014,0l-4.0735,4.07738l7.13121,7.13121l-7.13121,7.13121l4.0735,4.07609l11.20859,-11.20859l-11.20859,-11.2073")
    source_btn
      .click(function(){
          self.show_source(self.viewer.json)
      })
      .attr('style', 'cursor: pointer');
 
-   var dir_btn = draw_btn(staticv, "m14.11023,34.4384l4.17224,5.27878l4.17224,5.27878l4.17243,-5.27863l4.17243,-5.27863l-5.80056,-0.0001l0.00015,-8.55001l-5.08821,-0.00009l-0.00015,8.55001l-5.80056,-0.0001l-0.00001,-0.00001z m20,-5 l5.27878,-4.17224l5.27878,-4.17224l-5.27863,-4.17243l-5.27863,-4.17243l-0.0001,5.80056l-8.55001,-0.00015l-0.00009,5.08821l8.55001,0.00015l-0.0001,5.80056l-0.00001,0.00001z").dmove(60,0)
+   var dir_btn = draw_btn(this.staticv, "m14.11023,34.4384l4.17224,5.27878l4.17224,5.27878l4.17243,-5.27863l4.17243,-5.27863l-5.80056,-0.0001l0.00015,-8.55001l-5.08821,-0.00009l-0.00015,8.55001l-5.80056,-0.0001l-0.00001,-0.00001z m20,-5 l5.27878,-4.17224l5.27878,-4.17224l-5.27863,-4.17243l-5.27863,-4.17243l-0.0001,5.80056l-8.55001,-0.00015l-0.00009,5.08821l8.55001,0.00015l-0.0001,5.80056l-0.00001,0.00001z").dmove(60,0)
    dir_btn.click(function(){
      if (diag_options.rankdir == "UD") {
        diag_options.rankdir = "LR"
@@ -433,7 +427,7 @@ var KerasModelEditor;
      self.viewer.model();
    }).attr('style', 'cursor: pointer');
 
-   save_btn = draw_btn(staticv, "m13.23779,29.3199l3.47651,-3.3671l9.52385,9.21968l15.87595,-15.36613l3.47774,3.36472l-19.35369,18.73561")
+   save_btn = draw_btn(this.staticv, "m13.23779,29.3199l3.47651,-3.3671l9.52385,9.21968l15.87595,-15.36613l3.47774,3.36472l-19.35369,18.73561")
    save_btn.move(120);
    save_btn
      .attr('style', 'cursor: pointer')
@@ -475,7 +469,7 @@ var KerasModelEditor;
     }
 
     this["Toggle Help"] = function(){
-      toggle_help(layer_ndx)
+      self.toggle_help(layer_ndx)
     }
   };
 
