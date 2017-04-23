@@ -1,0 +1,29 @@
+{
+  "name": "keras-model-editor",
+  "version": "0.0.2",
+  "description": "Edit Keras Models with SVG",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/neurals-ro/keras-model-editor.git"
+  },
+  "keywords": [
+    "keras",
+    "diagram",
+    "neural",
+    "networks"
+  ],
+  "author": "Christian Tzurcanu",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/neurals-ro/keras-model-editor/issues"
+  },
+  "homepage": "https://github.com/neurals-ro/keras-model-editor#readme",
+  "dependencies": {
+    "dat.gui": "0.6.1",
+    "keras-model-viewer": "0.0.3"
+  }
+}
