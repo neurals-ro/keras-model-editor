@@ -54,12 +54,8 @@ var KerasModelEditor;
 
   KerasModelEditor.prototype.save_src =function() {
     $("#json_source_editor").hide();
-    console.log('save_src', this)
     var source = JSON.parse($("#json_source_textarea").val())
-    console.log('source', JSON.stringify(source))
-    console.log('this.layer_editing', this.layer_editing)
-    console.log('layer_ndx', this.viewer.layer_ndx)
-    console.log(JSON.stringify(this.viewer.json.config))
+
     if (this.layer_editing && this.viewer.layer_ndx != "model"){
       if(this.viewer.json.config.layers) {
         this.viewer.json.config.layers[this.viewer.layer_ndx]=source;
@@ -89,7 +85,6 @@ var KerasModelEditor;
 
     var key = this.viewer.source_layers[this.viewer.layer_ndx].class_name
 
-    console.log('help', this.help);
     flow = this.help.textflow(key+": "+ this.viewer.keras_args[key].help, dims.w - 50,dims.h - 50)
         .font({ family: 'sans-serif',  size: 16, anchor: 'start' })
         .move(this.help_pos.x+25, this.help_pos.y +25)
@@ -115,7 +110,6 @@ var KerasModelEditor;
   }
 
   KerasModelEditor.prototype.update_layer = function(layer_index) {
-    console.log(this.viewer.graph, this.viewer.layer_ndx)
     let self = this;
     let model = this.viewer.graph;
 
@@ -172,9 +166,7 @@ var KerasModelEditor;
         control = this.gui.add(text, i)
       }
       control.onFinishChange(function(value) {
-          console.log('control.onFinishChange', value)
           if(!value) {
-              console.log('control.onFinishChange no value')
               delete source_layers[layer_ndx].config[i];
           }
           else {
@@ -213,7 +205,6 @@ var KerasModelEditor;
   }
 
   KerasModelEditor.prototype.add_layer_below = function(ndx) {
-    console.log('add_layer_below ndx', ndx);
     let source_layers = this.viewer.source_layers;
     var new_layer = {
       "class_name": "Dense",
@@ -264,7 +255,6 @@ var KerasModelEditor;
   }
 
   KerasModelEditor.prototype.add_layer = function(ndx) {
-    console.log('add_layer ndx', ndx);
     let source_layers = this.viewer.source_layers;
     var new_layer = {
         "class_name": "Dense",
@@ -303,40 +293,62 @@ var KerasModelEditor;
     let group = drawn;
     let self = this;
     group.click(function() {
-      console.log(this, this.attr("data-index"))
-        self.update_layer(this.attr("data-index"))
-      })
+      self.update_layer(this.attr("data-index"))
+    });
     var add = group.group()
     add.circle(25).attr({fill:"#fff","stroke-width": 2})
     var arrow = add.path("m5,10.6446 l3.57256,4.51989l3.57256,4.51989l3.57256,-4.51989l3.57256,-4.51989l-4.96673,0l0,-7.32094l-4.35678,0l0,7.32094l-4.96673,0z")
     if (this.viewer._options.rankdir == "LR") arrow.rotate(-90)
     add.cx(node.x + node.width/2).cy(node.y+node.height/2).attr("data-index",j-1)
     add.click(function() {
-        self.add_layer(this.attr("data-index"))
-      })
-
+      self.add_layer(this.attr("data-index"))
+    });
     var addL = group.group()
     addL.circle(25).attr({fill:"#fff","stroke-width": 2})
     var arrow2 = addL.path("m5,10.6446 l3.57256,4.51989l3.57256,4.51989l3.57256,-4.51989l3.57256,-4.51989l-4.96673,0l0,-7.32094l-4.35678,0l0,7.32094l-4.96673,0z")
     if (this.viewer._options.rankdir == "LR") {
-        arrow2.rotate(-90)
-        addL.cx(node.x + node.width/2).cy(node.y)
+      arrow2.rotate(-90)
+      addL.cx(node.x + node.width/2).cy(node.y)
     }
     if (this.viewer._options.rankdir == "UD") {
-        addL.cx(node.x).cy(node.y+node.height/2)
+      addL.cx(node.x).cy(node.y+node.height/2)
     }
     addL.attr("data-index",j-1)
     addL.click(function() {
-        self.add_layer_below(this.attr("data-index"))
-      })
+      self.add_layer_below(this.attr("data-index"))
+    })
 
     return group
+  }
+
+  KerasModelEditor.prototype.draw_btns = function() {
+    let self = this;
+    /*let el2 = document.createElement('div');
+    el2.setAttribute('id', 'editorButtons');
+    this.viewer._el.parentElement.appendChild(el2);
+    this.drawBtns = SVG('editorButtons');
+    console.log(this.drawBtns)
+    this.staticv = this.drawBtns.group();*/
+    this.staticv = this.viewer.draw.group();
+    this.source_btn = draw_btn(this.staticv, "m20.55053,17.80402l-11.206,11.20988l11.2073,11.20859l4.07609,-4.07609l-7.1325,-7.1325l7.13121,-7.13121l-4.07609,-4.07867m16.4014,0l-4.0735,4.07738l7.13121,7.13121l-7.13121,7.13121l4.0735,4.07609l11.20859,-11.20859l-11.20859,-11.2073");
+    this.source_btn.click(function(){
+        self.show_source(self.viewer.json)
+    }).attr('style', 'cursor: pointer');
+
+    this.dir_btn = draw_btn(this.staticv, "m14.11023,34.4384l4.17224,5.27878l4.17224,5.27878l4.17243,-5.27863l4.17243,-5.27863l-5.80056,-0.0001l0.00015,-8.55001l-5.08821,-0.00009l-0.00015,8.55001l-5.80056,-0.0001l-0.00001,-0.00001z m20,-5 l5.27878,-4.17224l5.27878,-4.17224l-5.27863,-4.17243l-5.27863,-4.17243l-0.0001,5.80056l-8.55001,-0.00015l-0.00009,5.08821l8.55001,0.00015l-0.0001,5.80056l-0.00001,0.00001z").dmove(60,0);
+    this.dir_btn.click(function(){
+      if (self.viewer._options.rankdir == "UD") {
+        self.viewer._options.rankdir = "LR"
+      } else {
+        self.viewer._options.rankdir = "UD"
+      }
+      self.viewer.model();
+    }).attr('style', 'cursor: pointer');
   }
 
   KerasModelEditor.prototype.draw_man = function() {
     let self = this;
     this._man = this.viewer._el.parentElement;
-    console.log(this._man)
     let source = document.createElement('div')
     source.setAttribute('id', 'json_source_editor')
     source.setAttribute('style', 'display: none;');
@@ -408,39 +420,11 @@ var KerasModelEditor;
     let self = this;
     this.viewer.show();
     this.draw_man();
+    //this.draw_btns();
     this.viewer.layer_ndx = 'model'
-    this.staticv = this.viewer.draw.group()
-   var source_btn = draw_btn(this.staticv, "m20.55053,17.80402l-11.206,11.20988l11.2073,11.20859l4.07609,-4.07609l-7.1325,-7.1325l7.13121,-7.13121l-4.07609,-4.07867m16.4014,0l-4.0735,4.07738l7.13121,7.13121l-7.13121,7.13121l4.0735,4.07609l11.20859,-11.20859l-11.20859,-11.2073")
-   source_btn
-     .click(function(){
-         self.show_source(self.viewer.json)
-     })
-     .attr('style', 'cursor: pointer');
 
-   var dir_btn = draw_btn(this.staticv, "m14.11023,34.4384l4.17224,5.27878l4.17224,5.27878l4.17243,-5.27863l4.17243,-5.27863l-5.80056,-0.0001l0.00015,-8.55001l-5.08821,-0.00009l-0.00015,8.55001l-5.80056,-0.0001l-0.00001,-0.00001z m20,-5 l5.27878,-4.17224l5.27878,-4.17224l-5.27863,-4.17243l-5.27863,-4.17243l-0.0001,5.80056l-8.55001,-0.00015l-0.00009,5.08821l8.55001,0.00015l-0.0001,5.80056l-0.00001,0.00001z").dmove(60,0)
-   dir_btn.click(function(){
-     if (diag_options.rankdir == "UD") {
-       diag_options.rankdir = "LR"
-     } else {
-       diag_options.rankdir = "UD"
-     }
-     self.viewer.model();
-   }).attr('style', 'cursor: pointer');
-
-   save_btn = draw_btn(this.staticv, "m13.23779,29.3199l3.47651,-3.3671l9.52385,9.21968l15.87595,-15.36613l3.47774,3.36472l-19.35369,18.73561")
-   save_btn.move(120);
-   save_btn
-     .attr('style', 'cursor: pointer')
-     .mousedown(function() {
-         console.log('mousedown')
-         this.select('circle')
-             .fill({color: '#CDE0F2', opacity: 0.8});
-     })
-     .mouseup(function() {
-         this.select('circle')
-             .fill({color: '#000000', opacity: 0.1});
-     });
   }
+
   function draw_btn(substrate, path_str){
     var btn = substrate.group();
     btn.circle(42).attr({"fill-opacity":0.1, "stroke-width":2}).move(8,8)
@@ -448,7 +432,7 @@ var KerasModelEditor;
     return btn
   }
 
-  show_menu = function(viewer, self, classs) {
+  function show_menu(viewer, self, classs) {
     let { source_layers, layer_ndx, keras_args } = viewer;
     this.name = source_layers[layer_ndx].config.name || source_layers[layer_ndx].class_name
 
@@ -463,7 +447,6 @@ var KerasModelEditor;
     }
 
     this["Edit Source"] = function(){
-      console.log('Edit Source for', layer_ndx);
       self.show_source(source_layers[layer_ndx]);
       self.layer_editing=true;
     }
@@ -473,56 +456,6 @@ var KerasModelEditor;
     }
   };
 
-  function showGraph(t) {
-    //console.log(t)
-    t.g = new dagre.graphlib.Graph();
-    t.g.setGraph({});
-    t.g.setDefaultEdgeLabel(function() { return {}; });
-    var g = t.g
-
-    t.svgd.clear()
-    t.marker = add_marker(t.svgd)
-
-    var nodes = t.nodes
-
-    var edges = t.edges
-
-    g.setGraph(diag_options)
-
-    for(row of edges) {
-      g.setEdge(row[0], row[1])
-    }
-
-    for(row in nodes) {
-      g.setNode(row, nodes[row])
-    }
-
-
-
-    dagre.layout(g)
-
-    var det = g.graph()
-
-    t.svgd.size(det.width, det.height)
-
-    g.edges().forEach(function(e) {
-        //console.log("Edge " + e.v + " -> " + e.w + ": " + JSON.stringify(g.edge(e)));
-        draw_edge(t.svgd, g.edge(e).points, t.marker)
-    })
-
-
-    var j=0
-    for (i in t.nodes) {
-      if (j == 0 ) {
-        model.layer.model = draw_node(t.svgd, t.nodes[i],j)
-      } else {
-        model.layer[j-1] = draw_node(t.svgd, t.nodes[i],j)
-      }
-
-      j++
-    }
-
-  }
 }));
 
 
