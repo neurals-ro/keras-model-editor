@@ -21,4 +21,4 @@ Copy your own models.json by pressing the upper-left button. Or just play with t
 This is in pre-pre-alpha stage but still usable. Let us know what features you would like to see in version 1.
 
 ## License
-GPL v.3
+MIT
