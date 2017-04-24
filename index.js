@@ -5,22 +5,29 @@ var SVG = require('keras-model-viewer/node_modules/svg.js');
 require('./lib/svg.textflow.js');
 require('./index.css');
 
-var KerasModelEditor;
-
 (function (root, factory) {
 
 	/* CommonJS */
-  if (typeof exports == 'object') module.exports = factory()
+  if (typeof exports == 'object') {
+    module.exports = root.document ? factory(root, root.document) : function(w){ return factory(w, w.document) }
+  }
 
   /* AMD module */
-  else if (typeof define == 'function' && define.amd) define(factory)
+  else if (typeof define == 'function' && define.amd) {
+    define(function(){
+      return factory(root, root.document)
+    })
+  }
 
   /* Global */
-  else root.KerasModelEditor = factory()
+  else {
+    root.KerasModelViewer = factory(root, root.document)
+  }
 
-}(this, function () {
+}(typeof window !== "undefined" ? window : this, function (window, document) {
 
-  KerasModelEditor = function(json, el, options) {
+
+  var KerasModelEditor = window.KerasModelEditor = function(json, el, options) {
     if(!json) {
         console.log('KerasModelEditor: No Model provided.');
     }
@@ -50,11 +57,13 @@ var KerasModelEditor;
     this.layer_editing = false;
   }
 
-  KerasModelEditor.prototype.hide_dialog = function() {$("#json_source_editor").hide(); }
+  KerasModelEditor.prototype.hide_dialog = function() {
+    document.getElementById('json_source_editor').setAttribute('style', 'display: none;');
+  }
 
   KerasModelEditor.prototype.save_src =function() {
-    $("#json_source_editor").hide();
-    var source = JSON.parse($("#json_source_textarea").val())
+    document.getElementById('json_source_editor').setAttribute('style', 'display: none;');
+    let source = JSON.parse(document.getElementById('json_source_textarea').value);
 
     if (this.layer_editing && this.viewer.layer_ndx != "model"){
       if(this.viewer.json.config.layers) {
@@ -69,9 +78,7 @@ var KerasModelEditor;
       this.viewer.json = source
     }
 
-    $("#json_source_textarea").blur()
-    //console.log(source)
-
+    document.getElementById("json_source_textarea").blur();
     this.viewer.model()
   }
 
@@ -90,7 +97,7 @@ var KerasModelEditor;
         .move(this.help_pos.x+25, this.help_pos.y +25)
         .fill('#000')
     var inc=0, text=""
-    for (i in this.viewer.keras_args[key].args){
+    for (let i in this.viewer.keras_args[key].args){
       inc++
       text = text + "\n "+i+": "+self.keras_help[i];
     }
@@ -182,8 +189,8 @@ var KerasModelEditor;
   }
 
   KerasModelEditor.prototype.show_source = function(source) {
-    $("#json_source_editor").show()
-    $("#json_source_textarea").val(JSON.stringify(source, null, ' '))
+    document.getElementById('json_source_editor').setAttribute('style', 'display: block;');
+    document.getElementById('json_source_textarea').value = JSON.stringify(source, null, ' ');
   }
 
   KerasModelEditor.prototype.change_name = function(ndx, old_name, name) {
@@ -440,7 +447,7 @@ var KerasModelEditor;
     this.trainable = source_layers[layer_ndx].config.trainable ? source_layers[layer_ndx].config.trainable : source_layers[layer_ndx].trainable
 
 
-    for (i in keras_args[classs].args){
+    for (let i in keras_args[classs].args){
       this[i] = (source_layers[layer_ndx].config[i] || source_layers[layer_ndx].config[i] === null) ? (source_layers[layer_ndx].config[i] || '') : keras_args[classs].args[i]
       if ( typeof this[i] === 'object') this[i] = JSON.stringify(this[i])
 
@@ -456,7 +463,5 @@ var KerasModelEditor;
     }
   };
 
+  return KerasModelEditor;
 }));
-
-
-exports = module.exports = KerasModelEditor;
