@@ -24532,12 +24532,12 @@ __webpack_require__(19);
     }
     this.helping = true;
     this.help = this.staticv.group();
-    dims = { w: 800, h: 800 };
+    var dims = { w: 800, h: 800 };
     this.help.rect(dims.w, dims.h).move(this.help_pos.x, this.help_pos.y).attr({ rx: 20, ry: 20, "fill-opacity": .7, fill: "#fff", "stroke-width": 1 });
 
     var key = this.viewer.source_layers[this.viewer.layer_ndx].class_name;
 
-    flow = this.help.textflow(key + ": " + this.viewer.keras_args[key].help, dims.w - 50, dims.h - 50).font({ family: 'sans-serif', size: 16, anchor: 'start' }).move(this.help_pos.x + 25, this.help_pos.y + 25).fill('#000');
+    var flow = this.help.textflow(key + ": " + this.viewer.keras_args[key].help, dims.w - 50, dims.h - 50).font({ family: 'sans-serif', size: 16, anchor: 'start' }).move(this.help_pos.x + 25, this.help_pos.y + 25).fill('#000');
     var inc = 0,
         text = "";
     for (var i in this.viewer.keras_args[key].args) {
@@ -24753,7 +24753,6 @@ __webpack_require__(19);
     this.drawBtns = SVG('editorButtons');
     console.log(this.drawBtns)
     this.staticv = this.drawBtns.group();*/
-    this.staticv = this.viewer.draw.group();
     this.source_btn = draw_btn(this.staticv, "m20.55053,17.80402l-11.206,11.20988l11.2073,11.20859l4.07609,-4.07609l-7.1325,-7.1325l7.13121,-7.13121l-4.07609,-4.07867m16.4014,0l-4.0735,4.07738l7.13121,7.13121l-7.13121,7.13121l4.0735,4.07609l11.20859,-11.20859l-11.20859,-11.2073");
     this.source_btn.click(function () {
       self.show_source(self.viewer.json);
@@ -24772,6 +24771,7 @@ __webpack_require__(19);
 
   KerasModelEditor.prototype.draw_man = function () {
     var self = this;
+    this.staticv = this.viewer.draw.group();
     this._man = this.viewer._el.parentElement;
     var source = document.createElement('div');
     source.setAttribute('id', 'json_source_editor');
