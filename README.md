@@ -3,11 +3,13 @@ Web editor for Keras models.
 
 Test it at https://neurals-ro.github.io/keras-model-editor/examples/index.html
 
-Click on the model's layers (rectangles) and change the settings from the GUI or click on `Edit Source` and change the source directly.
-
-Copy your own models.json by clicking on the leftmost rectangle -> `Edit Source`.
+Click on the model's layers (rectangles) and change the settings from the GUI or click on `Edit Source` and change the source directly. Copy your own models.json by clicking on the leftmost rectangle -> `Edit Source`.
 
 After changes copy the code to be imported with [Keras] (https://keras.io).
+
+## keras-model-viewer
+
+https://github.com/neurals-ro/keras-model-viewer
 
 ## Features
 - Color coded: generally the red layers loose some data, green: bring add'l data, etc.
@@ -21,10 +23,6 @@ After changes copy the code to be imported with [Keras] (https://keras.io).
 
 See `examples` folder.
 
-```
-npm i keras-model-editor
-
-```
 
 ```
 new KerasModelEditor( kerasModelObject, elementId);
