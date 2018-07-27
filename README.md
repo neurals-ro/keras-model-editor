@@ -1,5 +1,5 @@
-# keras-model-editor 
-[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/kmader/keras-model-editor/patch-1)
+# keras-model-editor [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/kmader/keras-model-editor/patch-1)
+
 Web editor for Keras models.
 
 Test it at https://neurals-ro.github.io/keras-model-editor/examples/index.html
