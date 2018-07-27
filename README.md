@@ -1,4 +1,4 @@
-# keras-model-editor [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/kmader/keras-model-editor/patch-1)
+# keras-model-editor [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/kmader/keras-model-editor/patch-1?filepath=examples%2Fdemo.ipynb)
 
 Web editor for Keras models.
 
